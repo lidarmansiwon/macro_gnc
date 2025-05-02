@@ -15,6 +15,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)       
 find_package(std_msgs REQUIRED)    
 find_package(mk3_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 # Include install path
 install(
@@ -25,9 +27,11 @@ install(
 # Add your test executable
 add_executable(lpf_sample src/tool/lpf_sample.cpp src/tool/low_pass_filter.cpp)
 add_executable(quaternion_sample src/tool/quaternion_sample.cpp src/tool/quaternion_utils.cpp)
-
+add_executable(odom_navi_node src/odom_navi_node.cpp)
+ament_target_dependencies(odom_navi_node rclcpp nav_msgs mk3_msgs sensor_msgs)
 
 # Set include directories
+target_include_directories(odom_navi_node PUBLIC ${INCLUDE_DIRECTORIES})
 target_include_directories(lpf_sample PUBLIC ${INCLUDE_DIRECTORIES})
 target_include_directories(quaternion_sample PUBLIC ${INCLUDE_DIRECTORIES})
 

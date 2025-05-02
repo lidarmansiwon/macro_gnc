@@ -1,13 +1,19 @@
 // navigation_node.hpp
 #pragma once
 
+// C++ Standard lib 
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "mk3_msgs/msg/navigation_type.hpp"
-#include "low_pass_filter.hpp"
-#include "quaternion_utils.hpp"
+#include "tool/low_pass_filter.hpp"
+#include "tool/quaternion_utils.hpp"
+#include "type.hpp"
 
 class NavigationNode : public rclcpp::Node {
 public:
@@ -16,7 +22,7 @@ public:
 private:
     void odometryCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
-    void timerCallback();
+    void create_wall_timer();
     void computeOdometry();
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
@@ -30,6 +36,7 @@ private:
     bool enable_imu_;
     bool start_check_;
     int data_check_;
+    NavigationData navigationData;
     
     nav_msgs::msg::Odometry::SharedPtr odometry_data_;
     sensor_msgs::msg::Imu::SharedPtr imu_data_;
