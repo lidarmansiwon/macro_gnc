@@ -34,6 +34,7 @@ private:
 
     bool enable_slam_;
     bool enable_imu_;
+    bool use_odometry = false;
     bool start_check_;
     int data_check_;
     NavigationData navigationData;
