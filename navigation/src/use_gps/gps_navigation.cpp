@@ -17,18 +17,14 @@
 #include "navigation/tool/quaternion_utils.hpp"
 
 
-  double reference_utm_x, reference_utm_y;
-  int reference_zone;
-  bool reference_northp;
-
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
 GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
 : Node("gps_navigation", node_options), 
   prev_pose_initialized_(false),
-  reference_gps_latitude_(-33.722768731682656),
-  reference_gps_longitude_(150.6739905114244),
+  reference_gps_latitude_(0.0),
+  reference_gps_longitude_(0.0),
   reference_utm_x(0.0),
   reference_utm_y(0.0),
   reference_zone(0.0),
@@ -36,8 +32,12 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
   LPFVel_x_(0.0),
   LPFVel_y_(0.0)
 {
+  this->declare_parameter<double>("reference_gps_latitude", 0.0);
+  this->declare_parameter<double>("reference_gps_longitude", 0.0);
   this->declare_parameter<double>("LPFVel_x", 0.0);
   this->declare_parameter<double>("LPFVel_y", 0.0);
+  reference_gps_latitude_  = this->get_parameter("reference_gps_latitude").as_double();
+  reference_gps_longitude_ = this->get_parameter("reference_gps_longitude").as_double();
   LPFVel_x_    = this->get_parameter("LPFVel_x").as_double();
   LPFVel_y_    = this->get_parameter("LPFVel_y").as_double();
 
@@ -88,7 +88,6 @@ void GPSNavigation::process()
     return;
   }
 
-  // 예시로 origin_utm_x_, origin_utm_y_와의 상대좌표를 구할 수 있음
   if (!origin_set_) {
 
     try {
@@ -172,5 +171,4 @@ void GPSNavigation::process()
   prev_y_ = y;
   prev_psi_ = psi;
   prev_time_ = current_time;
-
 }

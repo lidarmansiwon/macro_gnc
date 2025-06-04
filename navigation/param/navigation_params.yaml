@@ -5,3 +5,9 @@ odom_navigation:
     LPFVel_x: 0.9
     LPFVel_y: 0.9
 
+gps_navigation:
+  ros__parameters:
+    LPFVel_x: 0.9
+    LPFVel_y: 0.9
+    reference_gps_latitude: -33.722768731682656
+    reference_gps_longitude: 150.6739905114244

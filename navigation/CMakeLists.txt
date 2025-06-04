@@ -31,6 +31,11 @@ install(
 )
 
 install(
+  DIRECTORY param/
+  DESTINATION share/${PROJECT_NAME}/param
+)
+
+install(
     DIRECTORY launch
     DESTINATION share/${PROJECT_NAME})
 
