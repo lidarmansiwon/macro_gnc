@@ -52,9 +52,6 @@ private:
   sensor_msgs::msg::Imu::SharedPtr imu_data_{nullptr};
   sensor_msgs::msg::NavSatFix::SharedPtr gps_data_{nullptr};
 
-//   // 상태 플래그
-//   bool prev_pose_initialized_{false};
-
   double reference_gps_latitude_;
   double reference_gps_longitude_;
   bool origin_set_ = false;
@@ -64,16 +61,6 @@ private:
   bool reference_northp;
 
   VelocityCalculator vel_calc_;
-
-//   // 이전 위치 및 시간
-//   double prev_x_{0.0};
-//   double prev_y_{0.0};
-//   double prev_psi_{0.0};
-//   rclcpp::Time prev_time_;
-
-//   // 속도 필터 변수
-//   double LPFVel_x_{0.0};
-//   double LPFVel_y_{0.0};
 
   NavigationData boat_data;
 };
