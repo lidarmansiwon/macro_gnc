@@ -43,7 +43,7 @@ private:
   // 객체 생성
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_subscription_;
-  rclcpp::Publisher<mk3_msgs::msg::NavigationType>::SharedPtr navigation_publisher_;
+  rclcpp::Publisher<NavigationType>::SharedPtr navigation_publisher_;
 
   // Timer
   rclcpp::TimerBase::SharedPtr timer_;

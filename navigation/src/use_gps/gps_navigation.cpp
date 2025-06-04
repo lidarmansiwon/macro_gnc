@@ -57,7 +57,7 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
   gps_subscription_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
     gps_topic, rclcpp::SensorDataQoS(), std::bind(&GPSNavigation::gps_callback, this, _1));
 
-  navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
+  navigation_publisher_ = this->create_publisher<NavigationType>(
     navigation_topic, 10);
 
   timer_ = this->create_wall_timer(50ms, std::bind(&GPSNavigation::process, this));

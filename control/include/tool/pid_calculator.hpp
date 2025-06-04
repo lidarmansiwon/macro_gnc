@@ -1,10 +1,10 @@
-// pid_control.hpp
+// pid_calculator.hpp
 #pragma once
 #include <cmath>
 
-class PIDControl {
+class PIDCalculator {
 public:
-    PIDControl() : kp(0.0), ki(0.0), kd(0.0), prev_error(0.0), integral(0.0), first_run(true) {}
+    PIDCalculator() : kp(0.0), ki(0.0), kd(0.0), prev_error(0.0), integral(0.0), first_run(true) {}
 
     void update(double kp_, double ki_, double kd_) {
         kp = kp_;
