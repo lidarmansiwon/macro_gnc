@@ -20,7 +20,6 @@ using namespace std::chrono_literals;
 
 OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 : Node("odom_navigation", node_options), 
-  boat_data{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
   type_odom(false),
   enable_imu_(false),
   prev_pose_initialized_(false),
@@ -175,7 +174,8 @@ void OdomNavigation::process()
 
   // odom_pub_->publish(odom_out);
 
-  mk3_msgs::msg::NavigationType nav_msg;
+  // 헤더 파일에서 using으로 정의함.
+  NavigationType nav_msg;
   nav_msg.x = x;
   nav_msg.y = y;
   nav_msg.psi = psi * 180.0 / M_PI;
