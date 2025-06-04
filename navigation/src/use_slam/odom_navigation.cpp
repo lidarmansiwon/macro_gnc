@@ -28,12 +28,23 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 {
 
   // Declare parameters
+
+  this->declare_parameter<std::string>("imu_topic", "/imu_topic");
+  this->declare_parameter<std::string>("odom_topic", "/odom_topic");
+  this->declare_parameter<std::string>("pose_topic", "/pose_topic");
+  this->declare_parameter<std::string>("navigation_topic", "/navigation_data");
+
   this->declare_parameter<bool>("type_odom", false);
   this->declare_parameter<bool>("enable_imu", false);
   this->declare_parameter<double>("LPFVel_x", 0.0);
   this->declare_parameter<double>("LPFVel_y", 0.0);
 
   // Get parameters
+  std::string imu_topic  = this->get_parameter("imu_topic").as_string();
+  std::string odom_topic = this->get_parameter("odom_topic").as_string();
+  std::string pose_topic = this->get_parameter("pose_topic").as_string();
+  std::string navigation_topic = this->get_parameter("navigation_topic").as_string();
+
   type_odom    = this->get_parameter("type_odom").as_bool();
   enable_imu_  = this->get_parameter("enable_imu").as_bool();
   LPFVel_x_    = this->get_parameter("LPFVel_x").as_double();
@@ -43,16 +54,16 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
   RCLCPP_INFO(this->get_logger(), "Run Odom Navigation");
 
   imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
-    "/ouster/imu", rclcpp::SensorDataQoS(), std::bind(&OdomNavigation::imu_callback, this, _1));
+    imu_topic, rclcpp::SensorDataQoS(), std::bind(&OdomNavigation::imu_callback, this, _1));
 
   odom_subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    "/odom", 10, std::bind(&OdomNavigation::odometry_callback, this, _1));
+    odom_topic, 10, std::bind(&OdomNavigation::odometry_callback, this, _1));
 
   pose_subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/current_pose", 10, std::bind(&OdomNavigation::pose_callback, this, _1));
+    pose_topic, 10, std::bind(&OdomNavigation::pose_callback, this, _1));
 
   navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
-    "/navigation_data", 10);
+    navigation_topic, 10);
 
   timer_ = this->create_wall_timer(10ms, std::bind(&OdomNavigation::process, this));
 }

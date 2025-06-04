@@ -32,10 +32,19 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
   LPFVel_x_(0.0),
   LPFVel_y_(0.0)
 {
+  this->declare_parameter<std::string>("imu_topic", "/imu_topic");
+  this->declare_parameter<std::string>("gps_topic", "/gps_topic");
+  this->declare_parameter<std::string>("navigation_topic", "/navigation_data");
+
   this->declare_parameter<double>("reference_gps_latitude", 0.0);
   this->declare_parameter<double>("reference_gps_longitude", 0.0);
   this->declare_parameter<double>("LPFVel_x", 0.0);
   this->declare_parameter<double>("LPFVel_y", 0.0);
+
+  std::string imu_topic = this->get_parameter("imu_topic").as_string();
+  std::string gps_topic = this->get_parameter("gps_topic").as_string();
+  std::string navigation_topic = this->get_parameter("navigation_topic").as_string();
+
   reference_gps_latitude_  = this->get_parameter("reference_gps_latitude").as_double();
   reference_gps_longitude_ = this->get_parameter("reference_gps_longitude").as_double();
   LPFVel_x_    = this->get_parameter("LPFVel_x").as_double();
@@ -45,13 +54,13 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
   RCLCPP_INFO(this->get_logger(), "Run GPS Navigation");
 
   imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
-    "/agent0/sensors/imu/imu/data", rclcpp::SensorDataQoS(), std::bind(&GPSNavigation::imu_callback, this, _1));
+    imu_topic, rclcpp::SensorDataQoS(), std::bind(&GPSNavigation::imu_callback, this, _1));
 
   gps_subscription_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-    "/agent0/sensors/gps/gps/fix", rclcpp::SensorDataQoS(), std::bind(&GPSNavigation::gps_callback, this, _1));
+    gps_topic, rclcpp::SensorDataQoS(), std::bind(&GPSNavigation::gps_callback, this, _1));
 
   navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
-    "/navigation_data", 10);
+    navigation_topic, 10);
 
   timer_ = this->create_wall_timer(10ms, std::bind(&GPSNavigation::process, this));
 }
