@@ -22,13 +22,28 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(GeographicLib REQUIRED)
 
+# 빌드할 때 컴파일러에게 헤더 파일이 있는 위치를 알려주는 것. 
+# 즉, #include "control/smoother.hpp"처럼 헤더를 사용할 수 있게 만듭니다.
 include_directories(include)
 
+
+# install(DIRECTORY include/ DESTINATION include)
+# 패키지를 설치할 때 헤더 파일들을 복사하도록 지시하는 명령어.
+# ROS 2나 일반 CMake 패키지를 시스템에 설치할 때, 헤더 파일이 /install/include/control/ 같은 위치에 배치되도록 함.
+# 설치 타임에만 영향이 있음.
+# 예: colcon build --install-base install 할 때 동작.
+# 이건 다른 패키지가 이 패키지를 사용할 수 있게 해주는 공개 헤더 제공을 위한 것.
 # Include install path
 install(
   DIRECTORY include/
   DESTINATION include
 )
+
+# | 항목     | `include_directories()` | `install(DIRECTORY ...)` |
+# | ------ | ----------------------- | ------------------------ |
+# | 언제 작동? | 빌드 시 (컴파일 시)            | 설치 시 (`colcon install`)  |
+# | 목적     | 헤더 경로를 컴파일러에 알림         | 헤더 파일을 시스템에 복사           |
+# | 대상     | 빌드 시스템                  | 설치 시스템                   |
 
 install(
   DIRECTORY param/
@@ -75,3 +90,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+
+
+
