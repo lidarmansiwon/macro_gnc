@@ -61,7 +61,8 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 
   navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
     navigation_topic, 10);
-
+  
+  // 50ms --> 20Hz 
   timer_ = this->create_wall_timer(50ms, std::bind(&OdomNavigation::process, this));
 }
 
@@ -135,25 +136,6 @@ void OdomNavigation::process()
     imu_angular_y = imu_data_->angular_velocity.y;
     imu_angular_z = imu_data_->angular_velocity.z;
   }
-
-  // nav_msgs::msg::Odometry odom_out;
-  // odom_out.header.stamp = current_time;
-  // odom_out.header.frame_id = "base_link";
-
-  // odom_out.pose.pose.position.x = x;
-  // odom_out.pose.pose.position.y = y;
-  // odom_out.pose.pose.position.z = 0.0;
-  // odom_out.pose.pose.orientation = quat;
-
-  // odom_out.twist.twist.linear.x = LPFVel_x_;
-  // odom_out.twist.twist.linear.y = LPFVel_y_;
-  // odom_out.twist.twist.linear.z = 0.0;
-
-  // odom_out.twist.twist.angular.x = imu_angular_x;
-  // odom_out.twist.twist.angular.y = imu_angular_y;
-  // odom_out.twist.twist.angular.z = imu_angular_z;
-
-  // odom_pub_->publish(odom_out);
 
   // 헤더 파일에서 using으로 정의함.
   NavigationType nav_msg;
