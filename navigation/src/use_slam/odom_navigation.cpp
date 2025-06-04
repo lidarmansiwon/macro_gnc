@@ -14,6 +14,7 @@
 
 #include "navigation/odom_navigation.hpp"
 #include "navigation/tool/quaternion_utils.hpp"
+#include "navigation/tool/velocity_calculator.hpp"
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -22,13 +23,10 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 : Node("odom_navigation", node_options), 
   type_odom(false),
   enable_imu_(false),
-  prev_pose_initialized_(false),
-  LPFVel_x_(0.0),
-  LPFVel_y_(0.0)
+  vel_calc_(0.9)
 {
 
   // Declare parameters
-
   this->declare_parameter<std::string>("imu_topic", "/imu_topic");
   this->declare_parameter<std::string>("odom_topic", "/odom_topic");
   this->declare_parameter<std::string>("pose_topic", "/pose_topic");
@@ -36,8 +34,7 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 
   this->declare_parameter<bool>("type_odom", false);
   this->declare_parameter<bool>("enable_imu", false);
-  this->declare_parameter<double>("LPFVel_x", 0.0);
-  this->declare_parameter<double>("LPFVel_y", 0.0);
+  this->declare_parameter<double>("velocity_alpha", 0.9);
 
   // Get parameters
   std::string imu_topic  = this->get_parameter("imu_topic").as_string();
@@ -47,8 +44,8 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
 
   type_odom    = this->get_parameter("type_odom").as_bool();
   enable_imu_  = this->get_parameter("enable_imu").as_bool();
-  LPFVel_x_    = this->get_parameter("LPFVel_x").as_double();
-  LPFVel_y_    = this->get_parameter("LPFVel_y").as_double();
+  double velocity_alpha = this->get_parameter("velocity_alpha").as_double();
+  vel_calc_ = VelocityCalculator(velocity_alpha);
 
   // 생성자에서 시작 표시.
   RCLCPP_INFO(this->get_logger(), "Run Odom Navigation");
@@ -65,7 +62,7 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
   navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
     navigation_topic, 10);
 
-  timer_ = this->create_wall_timer(10ms, std::bind(&OdomNavigation::process, this));
+  timer_ = this->create_wall_timer(50ms, std::bind(&OdomNavigation::process, this));
 }
 
 OdomNavigation::~OdomNavigation()
@@ -91,7 +88,6 @@ void OdomNavigation::process()
 
   geometry_msgs::msg::Quaternion quat;
   geometry_msgs::msg::Point pos;
-  rclcpp::Time current_time;
 
   if (!type_odom && pose_data_)
   {
@@ -99,7 +95,6 @@ void OdomNavigation::process()
     RCLCPP_INFO_ONCE(this->get_logger(),"NODE START");
     quat = pose_data_->pose.orientation;
     pos = pose_data_->pose.position;
-    current_time = pose_data_->header.stamp;
   }
   else if (type_odom && odom_data_)
   {
@@ -107,7 +102,6 @@ void OdomNavigation::process()
     RCLCPP_INFO_ONCE(this->get_logger(),"NODE START");
     quat = odom_data_->pose.pose.orientation;
     pos = odom_data_->pose.pose.position;
-    current_time = odom_data_->header.stamp;
   }
   else
   {
@@ -125,37 +119,13 @@ void OdomNavigation::process()
   double y = pos.y;
   double psi = yaw;
 
-  if (!prev_pose_initialized_)
-  {
-    prev_x_ = x;
-    prev_y_ = y;
-    prev_psi_ = psi;
-    prev_time_ = current_time;
-    prev_pose_initialized_ = true;
-    return;
-  }
+  rclcpp::Time current_time = this->now();
+  double time_sec = current_time.seconds();
 
-  double dt = 0.05;
-  if (dt <= 0) return;
-
-  double dx = x - prev_x_;
-  double dy = y - prev_y_;
-  double dpsi = psi - prev_psi_;
-
-  double vx_fixed = dx / dt;
-  double vy_fixed = dy / dt;
-
-  double cos_psi = std::cos(psi);
-  double sin_psi = std::sin(psi);
-
-  double vx = vx_fixed * cos_psi + vy_fixed * sin_psi;
-  double vy = -vx_fixed * sin_psi + vy_fixed * cos_psi;
-
-  double angular_velocity = dpsi / dt;
-
-  double alpha = 0.9;
-  LPFVel_x_ = alpha * LPFVel_x_ + (1 - alpha) * vx;
-  LPFVel_y_ = alpha * LPFVel_y_ + (1 - alpha) * vy;
+  auto result = vel_calc_.update(x, y, psi, time_sec);
+  double LPFVel_x = result.LPFVel_x;
+  double LPFVel_y = result.LPFVel_y;
+  double angular_velocity = result.angular_velocity;
 
   double imu_angular_x = 0.0, imu_angular_y = 0.0, imu_angular_z = 0.0;
   if (enable_imu_ && imu_data_)
@@ -190,16 +160,10 @@ void OdomNavigation::process()
   nav_msg.x = x;
   nav_msg.y = y;
   nav_msg.psi = psi * 180.0 / M_PI;
-  nav_msg.u = LPFVel_x_;
-  nav_msg.v = LPFVel_y_;
+  nav_msg.u = LPFVel_x;
+  nav_msg.v = LPFVel_y;
   nav_msg.r = angular_velocity;
   nav_msg.w = imu_angular_x;
 
   navigation_publisher_->publish(nav_msg);
-
-  prev_x_ = x;
-  prev_y_ = y;
-  prev_psi_ = psi;
-  prev_time_ = current_time;
-
 }

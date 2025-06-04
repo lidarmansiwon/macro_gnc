@@ -15,6 +15,7 @@
 
 #include "navigation/gps_navigation.hpp"
 #include "navigation/tool/quaternion_utils.hpp"
+#include "navigation/tool/velocity_calculator.hpp"
 
 
 using std::placeholders::_1;
@@ -22,24 +23,21 @@ using namespace std::chrono_literals;
 
 GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
 : Node("gps_navigation", node_options), 
-  prev_pose_initialized_(false),
   reference_gps_latitude_(0.0),
   reference_gps_longitude_(0.0),
   reference_utm_x(0.0),
   reference_utm_y(0.0),
   reference_zone(0.0),
   reference_northp(false),
-  LPFVel_x_(0.0),
-  LPFVel_y_(0.0)
-{
+  vel_calc_(0.9)
+{ 
   this->declare_parameter<std::string>("imu_topic", "/imu_topic");
   this->declare_parameter<std::string>("gps_topic", "/gps_topic");
   this->declare_parameter<std::string>("navigation_topic", "/navigation_data");
 
   this->declare_parameter<double>("reference_gps_latitude", 0.0);
   this->declare_parameter<double>("reference_gps_longitude", 0.0);
-  this->declare_parameter<double>("LPFVel_x", 0.0);
-  this->declare_parameter<double>("LPFVel_y", 0.0);
+  this->declare_parameter<double>("velocity_alpha", 0.9);
 
   std::string imu_topic = this->get_parameter("imu_topic").as_string();
   std::string gps_topic = this->get_parameter("gps_topic").as_string();
@@ -47,8 +45,8 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
 
   reference_gps_latitude_  = this->get_parameter("reference_gps_latitude").as_double();
   reference_gps_longitude_ = this->get_parameter("reference_gps_longitude").as_double();
-  LPFVel_x_    = this->get_parameter("LPFVel_x").as_double();
-  LPFVel_y_    = this->get_parameter("LPFVel_y").as_double();
+  double velocity_alpha = this->get_parameter("velocity_alpha").as_double();
+  vel_calc_ = VelocityCalculator(velocity_alpha);
 
   // 생성자에서 시작 표시.
   RCLCPP_INFO(this->get_logger(), "Run GPS Navigation");
@@ -62,7 +60,7 @@ GPSNavigation::GPSNavigation(const rclcpp::NodeOptions & node_options)
   navigation_publisher_ = this->create_publisher<mk3_msgs::msg::NavigationType>(
     navigation_topic, 10);
 
-  timer_ = this->create_wall_timer(10ms, std::bind(&GPSNavigation::process, this));
+  timer_ = this->create_wall_timer(50ms, std::bind(&GPSNavigation::process, this));
 }
 
 GPSNavigation::~GPSNavigation()
@@ -117,7 +115,6 @@ void GPSNavigation::process()
   RCLCPP_INFO(this->get_logger(), "Relative position: x=%.2f, y=%.2f\n\n", relative_x, relative_y);
 
   geometry_msgs::msg::Quaternion quat;
-  rclcpp::Time current_time;
 
   quat = imu_data_->orientation;
 
@@ -133,51 +130,22 @@ void GPSNavigation::process()
   double y = relative_y;
   double psi = yaw;
 
-  if (!prev_pose_initialized_)
-  {
-    prev_x_ = x;
-    prev_y_ = y;
-    prev_psi_ = psi;
-    prev_time_ = current_time;
-    prev_pose_initialized_ = true;
-    return;
-  }
+  rclcpp::Time current_time = this->now();
+  double time_sec = current_time.seconds();
 
-  double dt = 0.05;
-  if (dt <= 0) return;
-
-  double dx = x - prev_x_;
-  double dy = y - prev_y_;
-  double dpsi = psi - prev_psi_;
-
-  double vx_fixed = dx / dt;
-  double vy_fixed = dy / dt;
-
-  double cos_psi = std::cos(psi);
-  double sin_psi = std::sin(psi);
-
-  double vx = vx_fixed * cos_psi + vy_fixed * sin_psi;
-  double vy = -vx_fixed * sin_psi + vy_fixed * cos_psi;
-
-  double angular_velocity = dpsi / dt;
-
-  double alpha = 0.9;
-  LPFVel_x_ = alpha * LPFVel_x_ + (1 - alpha) * vx;
-  LPFVel_y_ = alpha * LPFVel_y_ + (1 - alpha) * vy;
+  auto result = vel_calc_.update(x, y, psi, time_sec);
+  double LPFVel_x = result.LPFVel_x;
+  double LPFVel_y = result.LPFVel_y;
+  double angular_velocity = result.angular_velocity;
 
   NavigationType nav_msg;
   nav_msg.x = x;
   nav_msg.y = y;
   nav_msg.psi = psi * 180.0 / M_PI;
-  nav_msg.u = LPFVel_x_;
-  nav_msg.v = LPFVel_y_;
+  nav_msg.u = LPFVel_x;
+  nav_msg.v = LPFVel_y;
   nav_msg.r = angular_velocity;
   nav_msg.w = imu_data_->angular_velocity.z;
 
   navigation_publisher_->publish(nav_msg);
-
-  prev_x_ = x;
-  prev_y_ = y;
-  prev_psi_ = psi;
-  prev_time_ = current_time;
 }

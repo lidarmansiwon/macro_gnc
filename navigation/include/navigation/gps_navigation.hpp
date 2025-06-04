@@ -19,6 +19,9 @@
 #include "tool/low_pass_filter.hpp"
 #include "tool/quaternion_utils.hpp"
 #include "type.hpp"
+#include "navigation/tool/velocity_calculator.hpp"
+
+
 
 class GPSNavigation : public rclcpp::Node
 {
@@ -49,8 +52,8 @@ private:
   sensor_msgs::msg::Imu::SharedPtr imu_data_{nullptr};
   sensor_msgs::msg::NavSatFix::SharedPtr gps_data_{nullptr};
 
-  // 상태 플래그
-  bool prev_pose_initialized_{false};
+//   // 상태 플래그
+//   bool prev_pose_initialized_{false};
 
   double reference_gps_latitude_;
   double reference_gps_longitude_;
@@ -60,15 +63,17 @@ private:
   int reference_zone;
   bool reference_northp;
 
-  // 이전 위치 및 시간
-  double prev_x_{0.0};
-  double prev_y_{0.0};
-  double prev_psi_{0.0};
-  rclcpp::Time prev_time_;
+  VelocityCalculator vel_calc_;
 
-  // 속도 필터 변수
-  double LPFVel_x_{0.0};
-  double LPFVel_y_{0.0};
+//   // 이전 위치 및 시간
+//   double prev_x_{0.0};
+//   double prev_y_{0.0};
+//   double prev_psi_{0.0};
+//   rclcpp::Time prev_time_;
+
+//   // 속도 필터 변수
+//   double LPFVel_x_{0.0};
+//   double LPFVel_y_{0.0};
 
   NavigationData boat_data;
 };
