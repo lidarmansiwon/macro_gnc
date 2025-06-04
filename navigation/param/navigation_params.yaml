@@ -1,0 +1,7 @@
+odom_navigation:
+  ros__parameters:
+    type_odom: false
+    enable_imu: true
+    LPFVel_x: 0.9
+    LPFVel_y: 0.9
+
