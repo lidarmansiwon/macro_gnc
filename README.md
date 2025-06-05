@@ -11,7 +11,7 @@
 
 ```bash
 MACRO_GNC/
-├── control/                # 제어 알고리즘 구현 예정
+├── control/                # 제어 알고리즘 구현
 ├── guidance/               # 유도 알고리즘 구현 예정
 ├── navigation/             # 항법 시스템 구현
 │   ├── include/            # 헤더 파일
@@ -40,6 +40,12 @@ MACRO_GNC/
 3. 파라미터 파일:
 - navigation/param/navigation_params.yaml을 통해 설정 가능
 - 예: 기준 GPS 좌표, 속도 필터 계수 등
+
+### Control 시스템
+
+1. pid 폴더:
+- Basic PID control
+
 
 ## Dependencies
 본 프로젝트는 ROS 2 Humble을 기반으로 하며, 다음 패키지를 필요로 합니다:
