@@ -56,6 +56,7 @@ GeographicLib
 ```
 sudo apt-get install geographiclib-tools
 sudo apt-get install ros-humble-geographic-*
+sudo apt-get install geographic-*
 ```
 
 ## 향후 개발 예정
