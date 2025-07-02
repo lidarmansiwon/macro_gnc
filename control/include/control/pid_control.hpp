@@ -52,6 +52,9 @@ private:
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr rc_subscription_;
   rclcpp::Publisher<ControlType>::SharedPtr control_publisher_;
 
+  OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
+  rcl_interfaces::msg::SetParametersResult on_parameter_change(const std::vector<rclcpp::Parameter> & parameters);
+
   // Timer
   rclcpp::TimerBase::SharedPtr timer_;
 

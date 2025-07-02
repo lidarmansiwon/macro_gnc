@@ -56,6 +56,11 @@ PIDControl::PIDControl(const rclcpp::NodeOptions & node_options)
     std::string rc_topic = this->get_parameter("rc_topic").as_string();
     std::string control_topic  = this->get_parameter("control_topic").as_string();
 
+    parameter_callback_handle_ = this->add_on_set_parameters_callback(
+    std::bind(&PIDControl::on_parameter_change, this, std::placeholders::_1)
+    );
+
+
     RCLCPP_INFO(this->get_logger(), "Run PID Control");
 
     guidance_subscription_   = this->create_subscription<GuidanceType>(guidance_topic, 10, std::bind(&PIDControl::guidance_callback, this, _1));
@@ -149,4 +154,33 @@ PWM PIDControl::cal_pwm(double desire_psi_, double desire_u_, double psi_, doubl
     pwm.stbd = command_pwm_stbd;
 
     return pwm;
+}
+
+rcl_interfaces::msg::SetParametersResult PIDControl::on_parameter_change(const std::vector<rclcpp::Parameter> & parameters)
+{
+    for (const auto & param : parameters)
+    {
+        if (param.get_name() == "kp") {
+            kp_ = param.as_double();
+        } else if (param.get_name() == "ki") {
+            ki_ = param.as_double();
+        } else if (param.get_name() == "kd") {
+            kd_ = param.as_double();
+        } else if (param.get_name() == "dt") {
+            dt_ = param.as_double();
+        } else if (param.get_name() == "saturation") {
+            saturation_ = param.as_double();
+        } else if (param.get_name() == "standard_pwm") {
+            standard_pwm_ = param.as_double();
+        }
+    }
+
+    pid_calculator.update(kp_, ki_, kd_);
+
+    RCLCPP_INFO(this->get_logger(), "Updated PID parameters: kp=%.3f, ki=%.3f, kd=%.3f", kp_, ki_, kd_);
+
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = true;
+    result.reason = "Parameters updated successfully";
+    return result;
 }

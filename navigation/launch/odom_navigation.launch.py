@@ -16,6 +16,7 @@ def generate_launch_description():
     )
 
     odom_navigation_node = Node(
+        namespace='',
         package='navigation',
         executable='odom_navigation',
         name='odom_navigation',
