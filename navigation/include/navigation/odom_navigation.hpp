@@ -33,6 +33,7 @@ public:
   
 private:
   void process(); // 주기적 처리 함수
+  double get_sysSec_from_ros_time(const rclcpp::Time& ros_time);
 
   // Callback 함수 정의
   void odometry_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
@@ -48,6 +49,8 @@ private:
   // Timer
   rclcpp::TimerBase::SharedPtr timer_;
 
+  rclcpp::Time start_time_;
+
   // 수신한 메시지 저장
   nav_msgs::msg::Odometry::SharedPtr odom_data_{nullptr};
   geometry_msgs::msg::PoseStamped::SharedPtr pose_data_{nullptr};
@@ -57,7 +60,10 @@ private:
   bool type_odom{false};
   bool enable_imu_{false};
 
-  VelocityCalculator vel_calc_;
+  bool start_time_set_ = false;
+  double start_time_sec_ = 0.0;
+
+  SixDofVelCalculator vel_calc_;
 
   NavigationData boat_data;
 };

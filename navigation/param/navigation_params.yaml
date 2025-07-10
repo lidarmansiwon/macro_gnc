@@ -7,7 +7,7 @@ odom_navigation:
     imu_topic: "/ouster/imu"
     odom_topic: "/odom"
     pose_topic: "/current_pose"
-    navigation_topic: "/navigation_data"
+    navigation_topic: "/agent0/navigation_data"
 
 gps_navigation:
   ros__parameters:

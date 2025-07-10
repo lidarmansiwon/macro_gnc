@@ -45,7 +45,7 @@ OdomNavigation::OdomNavigation(const rclcpp::NodeOptions & node_options)
   type_odom    = this->get_parameter("type_odom").as_bool();
   enable_imu_  = this->get_parameter("enable_imu").as_bool();
   double velocity_alpha = this->get_parameter("velocity_alpha").as_double();
-  vel_calc_ = VelocityCalculator(velocity_alpha);
+  vel_calc_ = SixDofVelCalculator(velocity_alpha);
 
   // 생성자에서 시작 표시.
   RCLCPP_INFO(this->get_logger(), "Run Odom Navigation");
@@ -76,6 +76,30 @@ void OdomNavigation::odometry_callback(const nav_msgs::msg::Odometry::SharedPtr 
 void OdomNavigation::pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg){pose_data_ = msg;}
 
 void OdomNavigation::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg){imu_data_ = msg;}
+
+
+double OdomNavigation::get_sysSec_from_ros_time(const rclcpp::Time& ros_time)
+{
+  // ROS Time → system_clock 시간으로 변환
+  std::chrono::nanoseconds ns_since_epoch(static_cast<int64_t>(ros_time.nanoseconds()));
+  auto time_point = std::chrono::time_point<std::chrono::system_clock>(ns_since_epoch);
+
+  // system_clock 기준으로 struct tm 얻기 (localtime)
+  std::time_t t_c = std::chrono::system_clock::to_time_t(time_point);
+  std::tm local_tm = *std::localtime(&t_c);
+
+  // 마이크로초 추출
+  auto duration_today = time_point - std::chrono::system_clock::from_time_t(t_c);
+  auto microsec = std::chrono::duration_cast<std::chrono::microseconds>(duration_today).count();
+
+  // 초 단위 시스템 시간 계산
+  double sysSec = local_tm.tm_hour * 3600.0 +
+                  local_tm.tm_min * 60.0 +
+                  local_tm.tm_sec +
+                  (microsec / 1e6);
+
+  return sysSec;
+}
 
 void OdomNavigation::process()
 {
@@ -109,43 +133,65 @@ void OdomNavigation::process()
     return;
   }
   
-  std::array<double, 3> rpy = euler_from_quaternion(
-    {quat.x, quat.y, quat.z, quat.w}
-  );
-  double roll = rpy[0];
-  double pitch = rpy[1];
-  double yaw = rpy[2];
+std::array<double, 3> rpy = euler_from_quaternion(
+  {quat.x, quat.y, quat.z, quat.w}
+);
+double roll = rpy[0];
+double pitch = rpy[1];
+double yaw = rpy[2];
 
-  double x = pos.x;
-  double y = pos.y;
-  double psi = yaw;
+double x = pos.x;
+double y = pos.y;
+double z = pos.z;
 
-  rclcpp::Time current_time = this->now();
-  double time_sec = current_time.seconds();
+double phi = roll;
+double theta = pitch;
+double psi = yaw;
 
-  auto result = vel_calc_.update(x, y, psi, time_sec);
-  double LPFVel_x = result.LPFVel_x;
-  double LPFVel_y = result.LPFVel_y;
-  double angular_velocity = result.angular_velocity;
+rclcpp::Time current_time = this->now();
+double cal_time = current_time.seconds();
+double systime = get_sysSec_from_ros_time(current_time); 
 
-  double imu_angular_x = 0.0, imu_angular_y = 0.0, imu_angular_z = 0.0;
-  if (enable_imu_ && imu_data_)
-  {
-    RCLCPP_INFO_ONCE(this->get_logger(),"IMU Enable!");
-    imu_angular_x = imu_data_->angular_velocity.x;
-    imu_angular_y = imu_data_->angular_velocity.y;
-    imu_angular_z = imu_data_->angular_velocity.z;
-  }
+if (!start_time_set_) {
+  start_time_sec_ = systime;
+  start_time_set_ = true;
+}
 
-  // 헤더 파일에서 using으로 정의함.
-  NavigationType nav_msg;
-  nav_msg.x = x;
-  nav_msg.y = y;
-  nav_msg.psi = psi * 180.0 / M_PI;
-  nav_msg.u = LPFVel_x;
-  nav_msg.v = LPFVel_y;
-  nav_msg.r = angular_velocity;
-  nav_msg.w = imu_angular_x;
+double time_since_start = systime - start_time_sec_;    // 상대 시간
 
-  navigation_publisher_->publish(nav_msg);
+
+// 속도 및 각속도 계산
+auto result = vel_calc_.update(x, y, z, phi, theta, psi, cal_time);
+
+// 메시지 구성
+NavigationType nav_msg;
+nav_msg.header.stamp = current_time;
+nav_msg.systime = systime;          // 절대 시간
+nav_msg.time = time_since_start;    // 상대 시간 (프로그램 시작 후 경과)
+
+nav_msg.x = x;
+nav_msg.y = y;
+nav_msg.z = z;
+
+nav_msg.psi = psi * 180.0 / M_PI;
+nav_msg.theta = theta * 180.0 / M_PI;
+nav_msg.phi = phi * 180.0 / M_PI;
+
+// 속도 (LPF 적용된 값)
+nav_msg.u = result.LPFVel_x;
+nav_msg.v = result.LPFVel_y;
+nav_msg.w = result.LPFVel_z;
+
+// 총 속도 크기 (optional)
+nav_msg.t_vel = std::sqrt(result.LPFVel_x * result.LPFVel_x +
+                          result.LPFVel_y * result.LPFVel_y +
+                          result.LPFVel_z * result.LPFVel_z);
+
+// 각속도 (LPF 적용된 값)
+nav_msg.p = result.LPFAngVel_p;
+nav_msg.q = result.LPFAngVel_q;
+nav_msg.r = result.LPFAngVel_r;
+
+navigation_publisher_->publish(nav_msg);
+
 }
