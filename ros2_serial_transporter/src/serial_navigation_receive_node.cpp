@@ -59,8 +59,8 @@ private:
   {
     asio::streambuf buf;
     while (rclcpp::ok() && serial_.is_open()) {
-      // '\n'까지 읽어들임
       try {
+        // '\n'까지 읽어들임
         asio::read_until(serial_, buf, '\n');
       } catch (std::exception &e) {
         RCLCPP_ERROR(this->get_logger(), "Serial read error: %s", e.what());
@@ -73,6 +73,10 @@ private:
       if (line.empty()) {
         continue;
       }
+
+      // **터미널에 원본 CSV 라인 로그**
+      RCLCPP_INFO(this->get_logger(), "Received raw: %s", line.c_str());
+
       parseAndPublish(line);
     }
   }
@@ -93,8 +97,8 @@ private:
 
     auto msg = NavigationType();
     // header
-    msg.header.stamp.sec    = std::stoll(tok[0]);
-    msg.header.stamp.nanosec= std::stoll(tok[1]);
+    msg.header.stamp.sec     = std::stoll(tok[0]);
+    msg.header.stamp.nanosec = std::stoll(tok[1]);
     // body
     msg.systime = std::stod(tok[2]);
     msg.time    = std::stod(tok[3]);
@@ -112,6 +116,12 @@ private:
     msg.q       = std::stod(tok[15]);
     msg.r       = std::stod(tok[16]);
 
+    // **파싱된 주요 필드 로그** (예: x, y, z, psi)
+    RCLCPP_INFO(this->get_logger(),
+      "Parsed → systime: %.3f, time: %.6f, x: %.4f, y: %.4f, z: %.4f, psi: %.4f",
+      msg.systime, msg.time, msg.x, msg.y, msg.z, msg.psi);
+
+    // 토픽 퍼블리시
     pub_->publish(msg);
   }
 
