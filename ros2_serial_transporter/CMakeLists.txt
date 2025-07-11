@@ -21,8 +21,20 @@ ament_target_dependencies(
 target_include_directories(navigation_serial_node PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(navigation_serial_node ${Boost_LIBRARIES})
 
+add_executable(serial_navigation_receive_node src/serial_navigation_receive_node.cpp)
+ament_target_dependencies(
+  serial_navigation_receive_node
+  rclcpp
+  mk3_msgs
+)
+
+target_include_directories(serial_navigation_receive_node PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(serial_navigation_receive_node ${Boost_LIBRARIES})
+
+
 install(
   TARGETS navigation_serial_node
+  TARGETS serial_navigation_receive_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
