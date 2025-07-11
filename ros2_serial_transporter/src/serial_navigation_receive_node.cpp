@@ -21,7 +21,7 @@ public:
   {
     // 파라미터 선언 및 읽기
     this->declare_parameter<std::string>("serial_port", "/dev/ttyUSB0");
-    this->declare_parameter<int>("baud_rate", 115200);
+    this->declare_parameter<int>("baud_rate", 9600);
     serial_port_ = this->get_parameter("serial_port").as_string();
     baud_rate_   = this->get_parameter("baud_rate").as_int();
 
