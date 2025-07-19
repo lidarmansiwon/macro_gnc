@@ -74,8 +74,8 @@ private:
         continue;
       }
 
-      // **터미널에 원본 CSV 라인 로그**
-      RCLCPP_INFO(this->get_logger(), "Received raw: %s", line.c_str());
+    //   // **터미널에 원본 CSV 라인 로그**
+    //   RCLCPP_INFO(this->get_logger(), "Received raw: %s", line.c_str());
 
       parseAndPublish(line);
     }
