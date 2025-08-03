@@ -169,28 +169,28 @@ nav_msg.header.stamp = current_time;
 nav_msg.systime = systime;          // 절대 시간
 nav_msg.time = time_since_start;    // 상대 시간 (프로그램 시작 후 경과)
 
-nav_msg.x = x;
-nav_msg.y = y;
-nav_msg.z = z;
+nav_msg.x = round(1000 * x) / 1000;
+nav_msg.y = round(1000 * y) / 1000;
+nav_msg.z = round(1000 * z) / 1000;
 
-nav_msg.psi = psi * 180.0 / M_PI;
-nav_msg.theta = theta * 180.0 / M_PI;
-nav_msg.phi = phi * 180.0 / M_PI;
+nav_msg.psi = round(1000 * (psi * 180.0 / M_PI)) / 1000;
+nav_msg.theta = round(1000 * (theta * 180.0 / M_PI)) / 1000;
+nav_msg.phi = round(1000 * (phi * 180.0 / M_PI)) / 1000;
 
 // 속도 (LPF 적용된 값)
-nav_msg.u = result.LPFVel_x;
-nav_msg.v = result.LPFVel_y;
-nav_msg.w = result.LPFVel_z;
+nav_msg.u = round(1000 * (result.LPFVel_x)) / 1000;
+nav_msg.v = round(1000 * (result.LPFVel_y)) / 1000;
+nav_msg.w = round(1000 * (result.LPFVel_z)) / 1000;
 
 // 총 속도 크기 (optional)
-nav_msg.t_vel = std::sqrt(result.LPFVel_x * result.LPFVel_x +
+nav_msg.t_vel = round(1000 * (std::sqrt(result.LPFVel_x * result.LPFVel_x +
                           result.LPFVel_y * result.LPFVel_y +
-                          result.LPFVel_z * result.LPFVel_z);
+                          result.LPFVel_z * result.LPFVel_z))) / 1000;
 
 // 각속도 (LPF 적용된 값)
-nav_msg.p = result.LPFAngVel_p;
-nav_msg.q = result.LPFAngVel_q;
-nav_msg.r = result.LPFAngVel_r;
+nav_msg.p = round(1000 * (result.LPFAngVel_p)) / 1000;
+nav_msg.q = round(1000 * (result.LPFAngVel_q)) / 1000;
+nav_msg.r = round(1000 * (result.LPFAngVel_r)) / 1000;
 
 navigation_publisher_->publish(nav_msg);
 
