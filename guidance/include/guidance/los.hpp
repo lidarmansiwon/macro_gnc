@@ -19,5 +19,16 @@ public:
 
 private:
     std::vector<Eigen::Vector2d> waypoints_;
-    
-}
+    size_t current_index_;
+    double lookahead_distance_;
+
+    Eigen::Vector2d current_position_;
+    double current_yaw_;
+
+    Eigen::Vector2d computeCircleLineIntersection(
+        const Eigen::Vector2d& circle_center,
+        double radius,
+        const Eigen::Vector2d& line_start,
+        const Eigen::Vector2d& line_end
+    ) const;
+};
