@@ -35,20 +35,27 @@ public:
       return {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     }
 
-    // double dt = current_time - prev_time_;
-    // if (dt <= 0.0) {
-    //   return {0.0, 0.0, 0.0, LPFVel_x_, LPFVel_y_};
-    // }
-    double dt = 0.05;
+    double dt = current_time - prev_time_;
+    if (dt <= 0.0) {
+      return {0.0, 0.0, 0.0, LPFVel_x_, LPFVel_y_};
+    }
+    // double dt = 0.05;
 
     double dx = x - prev_x_;
     double dy = y - prev_y_;
     double dz = z - prev_z_;
 
 
-    double dpsi = psi - prev_psi_;
-    double dtheta = theta - prev_theta_;
-    double dphi = phi - prev_phi_;
+
+    double dpsi = (180.0 / M_PI)*psi - (180.0 / M_PI)*prev_psi_;
+    double dtheta = (180.0 / M_PI)*theta - (180.0 / M_PI)*prev_theta_;
+    double dphi = (180.0 / M_PI)*phi - (180.0 / M_PI)*prev_phi_;
+
+    if (dpsi > 180.0) {
+      dpsi = dpsi - 360.0; 
+    } else if (dpsi < -180) {
+      dpsi = dpsi + 360.0;
+    }
 
     double vx_fixed = dx / dt;
     double vy_fixed = dy / dt;
@@ -62,17 +69,18 @@ public:
     double c_psi = std::cos(psi);
     double s_psi = std::sin(psi);
 
-    double vx = vx_fixed * c_psi * c_theta +
-                vy_fixed * (c_psi * s_theta * s_phi - s_psi * c_phi) +
-                vz_fixed * (c_psi * s_theta * c_phi + s_psi * s_phi);
+    // R_n^b = (R_b^n)^T 적용
+    double vx = c_theta * c_psi * vx_fixed +
+              c_theta * s_psi * vy_fixed -
+              s_theta * vz_fixed;
 
-    double vy = vx_fixed * s_psi * c_theta +
-                vy_fixed * (s_psi * s_theta * s_phi + c_psi * c_phi) +
-                vz_fixed * (s_psi * s_theta * c_phi - c_psi * s_phi);
+    double vy = (s_phi * s_theta * c_psi - c_phi * s_psi) * vx_fixed +
+              (s_phi * s_theta * s_psi + c_phi * c_psi) * vy_fixed +
+              s_phi * c_theta * vz_fixed;
 
-    double vz = -vx_fixed * s_theta +
-                vy_fixed * c_theta * s_phi +
-                vz_fixed * c_theta * c_phi;
+    double vz = (c_phi * s_theta * c_psi + s_phi * s_psi) * vx_fixed +
+              (c_phi * s_theta * s_psi - s_phi * c_psi) * vy_fixed +
+              c_phi * c_theta * vz_fixed;
 
     // 각속도 계산 (Euler 각의 시간 변화량)
     double p = dphi / dt;
