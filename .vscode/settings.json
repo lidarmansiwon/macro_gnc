@@ -68,6 +68,12 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "strstream": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "csignal": "cpp",
+        "any": "cpp",
+        "codecvt": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp",
+        "shared_mutex": "cpp"
     }
 }

@@ -15,12 +15,17 @@ install(
   DESTINATION include
 )
 
-
-
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+add_executable(pp_example src/pp_example.cpp src/pure_pursuit.cpp)
+
+install(TARGETS
+  pp_example
+
+  DESTINATION lib/${PROJECT_NAME})
+
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
